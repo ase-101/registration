@@ -602,11 +602,11 @@ public class BioServiceImpl extends BaseService implements BioService {
 				FingerprintDetailsDTO segmentedDetailsDTO = new FingerprintDetailsDTO();
 
 				byte[] isoTemplateBytes = IOUtils
-						.resourceToByteArray(folderPath.concat(RegistrationConstants.ISO_FILE));
+						.toByteArray(folderPath.concat(RegistrationConstants.ISO_FILE));
 				segmentedDetailsDTO.setFingerPrint(isoTemplateBytes);
 
 				byte[] isoImageBytes = IOUtils
-						.resourceToByteArray(folderPath.concat(RegistrationConstants.ISO_IMAGE_FILE));
+						.toByteArray(folderPath.concat(RegistrationConstants.ISO_IMAGE_FILE));
 				segmentedDetailsDTO.setFingerPrintISOImage(isoTemplateBytes);
 
 				String fingerprintImageName = imageFileName[3];
@@ -907,11 +907,11 @@ public class BioServiceImpl extends BaseService implements BioService {
 				bufferedImage = ImageIO
 						.read(this.getClass().getResourceAsStream(RegistrationConstants.IRIS_IMAGE_LOCAL));
 				qualityScore = 90.5;
-				iso = IOUtils.resourceToByteArray(RegistrationConstants.LEFT_EYE_ISO);
+				iso = IOUtils.toByteArray(RegistrationConstants.LEFT_EYE_ISO);
 			} else {
 				bufferedImage = ImageIO
 						.read(this.getClass().getResourceAsStream(RegistrationConstants.IRIS_IMAGE_LOCAL_RIGHT));
-				iso = IOUtils.resourceToByteArray(RegistrationConstants.RIGHT_EYE_ISO);
+				iso = IOUtils.toByteArray(RegistrationConstants.RIGHT_EYE_ISO);
 				qualityScore = 50.0;
 			}
 
@@ -967,7 +967,7 @@ public class BioServiceImpl extends BaseService implements BioService {
 	public byte[] getSingleBiometricIsoTemplate(CaptureResponseDto captureResponseDto) throws IOException {
 
 		if (!isMdmEnabled())
-			return IOUtils.resourceToByteArray(RegistrationConstants.FACE_ISO);
+			return IOUtils.toByteArray(RegistrationConstants.FACE_ISO);
 		else {
 			return mosipBioDeviceManager.getSingleBiometricIsoTemplate(captureResponseDto);
 		}

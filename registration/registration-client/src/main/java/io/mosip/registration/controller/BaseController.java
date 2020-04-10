@@ -22,8 +22,6 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.sun.javafx.scene.control.skin.TableHeaderRow;
-
 import io.mosip.kernel.core.exception.ExceptionUtils;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.templatemanager.spi.TemplateManagerBuilder;
@@ -1451,9 +1449,8 @@ public class BaseController {
 	protected void disableColumnsReorder(TableView<?> table) {
 		if (table != null) {
 			table.widthProperty().addListener((source, oldWidth, newWidth) -> {
-				TableHeaderRow header = (TableHeaderRow) table.lookup("TableHeaderRow");
-				header.reorderingProperty()
-						.addListener((observable, oldValue, newValue) -> header.setReordering(false));
+				 javafx.scene.control.skin.TableHeaderRow header = ( javafx.scene.control.skin.TableHeaderRow) table.lookup("TableHeaderRow");
+				//header.reorderingProperty().addListener((observable, oldValue, newValue) -> header.setReordering(false));
 			});
 		}
 	}

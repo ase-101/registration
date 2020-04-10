@@ -239,7 +239,7 @@ public class BioServiceTest {
 		ApplicationContext.getInstance().getApplicationMap().put("mosip.mdm.enabled", "N");
 
 		PowerMockito.mockStatic(IOUtils.class);
-		Mockito.when(IOUtils.resourceToByteArray(Mockito.anyString())).thenReturn("image".getBytes());
+		Mockito.when(IOUtils.toByteArray(Mockito.anyString())).thenReturn("image".getBytes());
 		String[] LEFTHAND_SEGMNTD_FILE_PATHS = new String[] { "/fingerprints/lefthand/leftIndex/",
 				"/fingerprints/lefthand/leftLittle/" };
 
@@ -277,7 +277,7 @@ public class BioServiceTest {
 		ApplicationContext.getInstance().getApplicationMap().put("mosip.mdm.enabled", "N");
 
 		PowerMockito.mockStatic(IOUtils.class);
-		Mockito.when(IOUtils.resourceToByteArray(Mockito.anyString())).thenReturn("image".getBytes());
+		Mockito.when(IOUtils.toByteArray(Mockito.anyString())).thenReturn("image".getBytes());
 		String[] LEFTHAND_SEGMNTD_FILE_PATHS = new String[] { "/fingerprints/lefthand/leftIndex/",
 				"/fingerprints/lefthand/leftLittle/" };
 
@@ -315,7 +315,7 @@ public class BioServiceTest {
 		FingerprintDetailsDTO fingerprintDTO = new FingerprintDetailsDTO();
 
 		PowerMockito.mockStatic(IOUtils.class);
-		Mockito.when(IOUtils.resourceToByteArray(Mockito.anyString())).thenReturn("image".getBytes());
+		Mockito.when(IOUtils.toByteArray(Mockito.anyString())).thenReturn("image".getBytes());
 		String[] LEFTHAND_SEGMNTD_FILE_PATHS = new String[] { "/fingerprints/lefthand/leftIndex/",
 				"/fingerprints/lefthand/leftLittle/" };
 
@@ -355,7 +355,7 @@ public class BioServiceTest {
 		FingerprintDetailsDTO fingerprintDTO = new FingerprintDetailsDTO();
 
 		PowerMockito.mockStatic(IOUtils.class);
-		Mockito.when(IOUtils.resourceToByteArray(Mockito.anyString())).thenReturn("image".getBytes());
+		Mockito.when(IOUtils.toByteArray(Mockito.anyString())).thenReturn("image".getBytes());
 		String[] LEFTHAND_SEGMNTD_FILE_PATHS = new String[] { "/fingerprints/lefthand/leftIndex/",
 				"/fingerprints/lefthand/leftLittle/", "/fingerprints/lefthand/leftMiddle/",
 				"/fingerprints/lefthand/leftRing/" };
@@ -524,7 +524,7 @@ public class BioServiceTest {
 	public void nonMdmTest() throws RegBaseCheckedException, IOException {
 		ApplicationContext.getInstance().getApplicationMap().put("mosip.mdm.enabled", "N");
 		PowerMockito.mockStatic(IOUtils.class);
-		Mockito.when(IOUtils.resourceToByteArray(Mockito.any())).thenReturn("image".getBytes());
+		Mockito.when(IOUtils.toByteArray(Mockito.anyString())).thenReturn("image".getBytes());
 		requestDetail.setType("LeftEye");
 		bioService.getIrisImageAsDTO(requestDetail,2,2);
 	}

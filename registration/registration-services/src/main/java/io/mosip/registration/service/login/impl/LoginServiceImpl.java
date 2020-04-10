@@ -7,6 +7,7 @@ import static io.mosip.registration.mapper.CustomObjectMapper.MAPPER_FACADE;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -35,11 +36,17 @@ import io.mosip.registration.dao.RegistrationCenterDAO;
 import io.mosip.registration.dao.ScreenAuthorizationDAO;
 import io.mosip.registration.dao.UserDetailDAO;
 import io.mosip.registration.dto.AuthorizationDTO;
+import io.mosip.registration.dto.MachineMasterDTO;
+import io.mosip.registration.dto.RegCenterUserDTO;
 import io.mosip.registration.dto.RegistrationCenterDetailDTO;
 import io.mosip.registration.dto.ResponseDTO;
 import io.mosip.registration.dto.UserDTO;
 import io.mosip.registration.dto.UserMachineMappingDTO;
+import io.mosip.registration.dto.UserPasswordDTO;
+import io.mosip.registration.dto.UserRoleDTO;
 import io.mosip.registration.entity.UserDetail;
+import io.mosip.registration.entity.UserMachineMapping;
+import io.mosip.registration.entity.UserRole;
 import io.mosip.registration.exception.RegBaseCheckedException;
 import io.mosip.registration.exception.RegistrationExceptionConstants;
 import io.mosip.registration.service.BaseService;
@@ -188,7 +195,10 @@ public class LoginServiceImpl extends BaseService implements LoginService {
 			auditFactory.audit(AuditEvent.FETCH_USR_DET, Components.USER_DETAIL, RegistrationConstants.APPLICATION_NAME,
 					AuditReferenceIdTypes.APPLICATION_ID.getReferenceTypeId());
 
-			userDTO = MAPPER_FACADE.map(userDetailDAO.getUserDetail(userId), UserDTO.class);
+			//userDTO = MAPPER_FACADE.map(userDetailDAO.getUserDetail(userId), UserDTO.class);
+			UserDetail userDetail = userDetailDAO.getUserDetail(userId);
+			if(userDetail != null)
+				userDTO = getUserDTO(userDetail);
 			
 			LOGGER.info(LOG_REG_LOGIN_SERVICE, APPLICATION_NAME, APPLICATION_ID, "Completed fetching User details");
 			
@@ -593,6 +603,54 @@ public class LoginServiceImpl extends BaseService implements LoginService {
 		if(null == userDTO) {
 			throwRegBaseCheckedException(RegistrationExceptionConstants.REG_LOGIN_USER_DTO_EXCEPTION);
 		} 
+	}
+	
+	private UserDTO getUserDTO(UserDetail userDetail) {		
+		UserDTO userDTO = new UserDTO();
+		userDTO.setId(userDetail.getId());
+		userDTO.setEmail(userDetail.getEmail());
+		userDTO.setLangCode(userDetail.getLangCode());
+		userDTO.setIsActive(userDetail.getIsActive());
+		userDTO.setRegid(userDetail.getRegid());
+		userDTO.setName(userDetail.getName());
+		userDTO.setSalt(userDetail.getSalt());
+		userDTO.setStatusCode(userDetail.getStatusCode());
+
+		UserPasswordDTO userPasswordDTO = new UserPasswordDTO();
+		userPasswordDTO.setPwd(userDetail.getUserPassword().getPwd());
+		userDTO.setUserPassword(userPasswordDTO);
+			
+		RegCenterUserDTO regCenterUserDTO = new RegCenterUserDTO();
+		regCenterUserDTO.setRegcntrId(userDetail.getRegCenterUser().getRegCenterUserId().getRegCenterId());
+		regCenterUserDTO.setUsrId(userDetail.getId());
+		userDTO.setRegCenterUser(regCenterUserDTO);
+			
+		userDTO.setUserRole(new HashSet<UserRoleDTO>());
+		for (UserRole userRole : userDetail.getUserRole()) {
+			UserRoleDTO userRoleDTO = new UserRoleDTO();
+			userRoleDTO.setRoleCode(userRole.getUserRoleId().getRoleCode());
+			userRoleDTO.setUsrId(userDetail.getId());
+			userRoleDTO.setActive(userRole.getIsActive());
+			userRoleDTO.setLangCode(userRole.getLangCode());
+			userDTO.getUserRole().add(userRoleDTO);
+		}
+			
+		userDTO.setUserMachineMapping(new HashSet<UserMachineMappingDTO>());
+		for (UserMachineMapping userMachineMapping : userDetail.getUserMachineMapping()) {
+			UserMachineMappingDTO userMachineMappingDTO = new UserMachineMappingDTO();
+			userMachineMappingDTO.setCentreID(userMachineMapping.getUserMachineMappingId().getCntrId());
+			userMachineMappingDTO.setActive(userMachineMapping.getIsActive());
+			userMachineMappingDTO.setLangCode(userMachineMapping.getLangCode());
+			userMachineMappingDTO.setMachineID(userMachineMapping.getUserMachineMappingId().getMachineId());
+			userMachineMappingDTO.setUserID(userMachineMapping.getUserMachineMappingId().getUsrId());
+			MachineMasterDTO machineMasterDTO = new MachineMasterDTO();
+			machineMasterDTO.setMacAddress(userMachineMapping.getMachineMaster().getMacAddress());
+			machineMasterDTO.setSerialNum(userMachineMapping.getMachineMaster().getSerialNum());
+			machineMasterDTO.setName(userMachineMapping.getMachineMaster().getName());
+			userMachineMappingDTO.setMachineMaster(machineMasterDTO);
+			userDTO.getUserMachineMapping().add(userMachineMappingDTO);
+		}			
+		return userDTO; 
 	}
 
 }
