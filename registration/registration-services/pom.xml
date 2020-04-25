@@ -271,6 +271,12 @@
 			<artifactId>faces</artifactId>
 			<groupId>org.openimaj</groupId>
 			<version>${org.openimaj.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>javassist</artifactId>
+					<groupId>javassist</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -375,9 +381,15 @@
 		</dependency>
 		
 		<dependency>
-				<groupId>org.codehaus.castor</groupId>
-				<artifactId>castor-xml</artifactId>
-				<version>1.4.1</version>
+			<groupId>castor</groupId>
+			<artifactId>castor</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.9.3</version>
 		</dependency>
 		
 		<dependency>
