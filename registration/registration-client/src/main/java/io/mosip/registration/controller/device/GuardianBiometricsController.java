@@ -419,7 +419,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 			}
 
 		} catch (RuntimeException runtimeException) {
-			LOGGER.error(LOG_REG_GUARDIAN_BIOMETRIC_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
+ 			LOGGER.error(LOG_REG_GUARDIAN_BIOMETRIC_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
 					String.format(
 							"Exception while getting the scanned biometrics for user registration: %s caused by %s",
 							runtimeException.getMessage(),
@@ -586,7 +586,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 		if (getRegistrationDTOFromSession().isUpdateUINNonBiometric()) {
 			guardianIris = getRegistrationDTOFromSession().getBiometricDTO().getApplicantBiometricDTO()
 					.getIrisDetailsDTO();
-		} else if ((boolean) SessionContext.map().get(RegistrationConstants.IS_Child)) {
+		} else if((boolean) SessionContext.map().get(RegistrationConstants.IS_Child)){
 			guardianIris = getRegistrationDTOFromSession().getBiometricDTO().getIntroducerBiometricDTO()
 					.getIrisDetailsDTO();
 		}
@@ -636,7 +636,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 
 					scanPopUpViewController.getScanImage().setImage(convertBytesToImage(iris.getIris()));
 					biometricImage.setImage(bioService.isMdmEnabled()
-							? bioService.getBioStreamImage(iris.getIrisType(), iris.getNumOfIrisRetry())
+							? convertBytesToImage(bioService.getBioStreamImage(iris.getIrisType(), iris.getNumOfIrisRetry()))
 							: convertBytesToImage(iris.getIris()));
 
 					setCapturedValues(bioService.isMdmEnabled()
@@ -705,7 +705,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 		if (getRegistrationDTOFromSession().isUpdateUINNonBiometric()) {
 			fingerprintDetailsDTOs = getRegistrationDTOFromSession().getBiometricDTO().getApplicantBiometricDTO()
 					.getFingerprintDetailsDTO();
-		} else if ((boolean) SessionContext.map().get(RegistrationConstants.IS_Child)) {
+		} else if((boolean) SessionContext.map().get(RegistrationConstants.IS_Child)){
 			fingerprintDetailsDTOs = getRegistrationDTOFromSession().getBiometricDTO().getIntroducerBiometricDTO()
 					.getFingerprintDetailsDTO();
 		}
@@ -747,7 +747,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 
 		LOGGER.info(LOG_REG_GUARDIAN_BIOMETRIC_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
 				"Validating Captured FingerPrints");
-		if (detailsDTO.isCaptured() && bioService.isValidFingerPrints(detailsDTO, true)) {
+		if (detailsDTO.isCaptured() && bioService.isValidFingerPrints(detailsDTO,true)) {
 
 			boolean isNotMatched = true;
 
@@ -793,7 +793,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 				detailsDTO.setFingerPrint(streamer.imageBytes);
 			}
 			biometricImage.setImage(bioService.isMdmEnabled()
-					? bioService.getBioStreamImage(detailsDTO.getFingerType(), detailsDTO.getNumRetry())
+					? convertBytesToImage(bioService.getBioStreamImage(detailsDTO.getFingerType(), detailsDTO.getNumRetry()))
 					: convertBytesToImage(detailsDTO.getFingerPrint()));
 
 			LOGGER.info(LOG_REG_GUARDIAN_BIOMETRIC_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
@@ -1021,7 +1021,8 @@ public class GuardianBiometricsController extends BaseController implements Init
 		LOGGER.info(LOG_REG_GUARDIAN_BIOMETRIC_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
 				"Validating the quality score of the captured fingers");
 		double qualityScore = bioService.isMdmEnabled()
-				? bioService.getHighQualityScoreByBioType(fingerprintDetailsDTO.getFingerType())
+				? bioService.getHighQualityScoreByBioType(fingerprintDetailsDTO.getFingerType(),
+						fingerprintDetailsDTO.getQualityScore())
 				: fingerprintDetailsDTO.getQualityScore();
 
 		return qualityScore >= handThreshold
@@ -1079,7 +1080,8 @@ public class GuardianBiometricsController extends BaseController implements Init
 				"Validating the quality score of the captured iris");
 
 		double qualityScore = bioService.isMdmEnabled()
-				? bioService.getHighQualityScoreByBioType(irisDetailsDTO.getIrisType())
+				? bioService.getHighQualityScoreByBioType(irisDetailsDTO.getIrisType(),
+						irisDetailsDTO.getQualityScore())
 				: irisDetailsDTO.getQualityScore();
 
 		return qualityScore >= irisThreshold || (Double.compare(qualityScore, irisThreshold) < 0
@@ -1330,7 +1332,7 @@ public class GuardianBiometricsController extends BaseController implements Init
 		String qualityScore = getQualityScore(qualityScoreValue);
 
 		if (qualityScore != null) {
-			Image streamImage = bioService.getBioStreamImage(bioType, attempt);
+			Image streamImage = convertBytesToImage(bioService.getBioStreamImage(bioType, attempt));
 			// Set Stream image
 			biometricImage.setImage(streamImage);
 

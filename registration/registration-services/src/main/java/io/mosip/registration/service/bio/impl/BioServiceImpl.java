@@ -8,7 +8,6 @@ import static io.mosip.registration.constants.RegistrationConstants.APPLICATION_
 import static io.mosip.registration.constants.RegistrationConstants.APPLICATION_NAME;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +56,6 @@ import io.mosip.registration.mdm.service.impl.MosipBioDeviceManager;
 import io.mosip.registration.service.BaseService;
 import io.mosip.registration.service.bio.BioService;
 import io.mosip.registration.service.security.AuthenticationService;
-import javafx.scene.image.Image;
 
 /**
  * This class {@code BioServiceImpl} handles all the biometric captures and
@@ -93,9 +91,19 @@ public class BioServiceImpl extends BaseService implements BioService {
 
 	private static Map<String, Map<Integer, Double>> BIO_QUALITY_SCORE = new HashMap<String, Map<Integer, Double>>();
 
-	private static Map<String, Map<Integer, Image>> BIO_STREAM_IMAGES = new HashMap<String, Map<Integer, Image>>();
+	private static Map<String, Map<Integer, byte[]>> BIO_STREAM_IMAGES = new HashMap<String, Map<Integer, byte[]>>();
 
 	private static Map<String, List<String>> lowQualityBiometrics = new HashMap<>();
+
+	private static List<String> bioAttributes = new LinkedList<>();
+
+	public static List<String> getBioAttributes() {
+		return bioAttributes;
+	}
+
+	public static void setBioAttributes(List<String> bioAttributes) {
+		BioServiceImpl.bioAttributes = bioAttributes;
+	}
 
 	public Map<String, List<String>> getLowQualityBiometrics() {
 		return lowQualityBiometrics;
@@ -789,7 +797,7 @@ public class BioServiceImpl extends BaseService implements BioService {
 
 				setBioQualityScores(captureResponse.getBioSubType(), attempt,
 						Integer.parseInt(captureResponse.getQualityScore()));
-				setBioStreamImages(convertBytesToImage(Base64.getDecoder().decode(captureResponse.getBioValue())),
+				setBioStreamImages(Base64.getDecoder().decode(captureResponse.getBioValue()),
 						captureResponse.getBioSubType(), attempt);
 
 				// Get Best Capture
@@ -810,21 +818,6 @@ public class BioServiceImpl extends BaseService implements BioService {
 		LOGGER.info(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID, "Leaving into getIrisImageAsDTOWithMdm method..");
 
 		return detailsDTO;
-	}
-
-	/**
-	 * Convert bytes to image.
-	 *
-	 * @param imageBytes
-	 *            the image bytes
-	 * @return the image
-	 */
-	protected Image convertBytesToImage(byte[] imageBytes) {
-		Image image = null;
-		if (imageBytes != null) {
-			image = new Image(new ByteArrayInputStream(imageBytes));
-		}
-		return image;
 	}
 
 	/**
@@ -1024,17 +1017,14 @@ public class BioServiceImpl extends BaseService implements BioService {
 	}
 
 	@Override
-	public Double getHighQualityScoreByBioType(String bioType) {
+	public Double getHighQualityScoreByBioType(String bioType, Double qualityScore) {
 		LOGGER.info(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID, "Getting highest quality score for : " + bioType);
 
-		double qualityScore = 0;
 		try {
 			qualityScore = BIO_QUALITY_SCORE.get(bioType).entrySet().stream()
 					.max(Comparator.comparing(Map.Entry::getValue)).get().getValue();
-		} catch (Exception exception) {
-			LOGGER.error(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID,
-					exception.getMessage() + ExceptionUtils.getStackTrace(exception));
-
+		} catch (Exception e) {
+			return qualityScore;
 		}
 
 		return qualityScore;
@@ -1091,19 +1081,19 @@ public class BioServiceImpl extends BaseService implements BioService {
 
 	}
 
-	public static void setBioStreamImages(Image image, String bioType, int attempt) {
+	public static void setBioStreamImages(byte[] image, String bioType, int attempt) {
 
 		LOGGER.info(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID,
 				"Started Set Stream image of : " + bioType + " for attempt : " + attempt);
 
-		Map<Integer, Image> bioImage = null;
+		Map<Integer, byte[]> bioImage = null;
 
 		if (BIO_STREAM_IMAGES.get(bioType) != null) {
 			bioImage = BIO_STREAM_IMAGES.get(bioType);
 
 		} else {
 
-			bioImage = new HashMap<Integer, Image>();
+			bioImage = new HashMap<Integer, byte[]>();
 
 		}
 
@@ -1131,7 +1121,7 @@ public class BioServiceImpl extends BaseService implements BioService {
 		BIO_STREAM_IMAGES.clear();
 	}
 
-	public Image getBioStreamImage(String bioType, int attempt) {
+	public byte[] getBioStreamImage(String bioType, int attempt) {
 
 		LOGGER.info(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID,
 				"Get Stream  Quality Score of : " + bioType + " for attempt : " + attempt);
@@ -1158,40 +1148,41 @@ public class BioServiceImpl extends BaseService implements BioService {
 	 */
 	public boolean isValidFingerPrints(FingerprintDetailsDTO fingerprintDetailsDTO, boolean isAuth) {
 
+		boolean isValid = false;
+
 		if (isAuth) {
 
 			String threshold = getThresholdKey(fingerprintDetailsDTO.getFingerType());
 
-			List<FingerprintDetailsDTO> lowQualityBio = new ArrayList<>();
+			List<FingerprintDetailsDTO> lowQualityBiometrics = new ArrayList<>();
 
 			double qualityScore = 0;
 			for (FingerprintDetailsDTO detailsDTO : fingerprintDetailsDTO.getSegmentedFingerprints()) {
 
 				if (detailsDTO.getQualityScore() < Double.valueOf(getGlobalConfigValueOf(threshold))) {
-
-					lowQualityBio.add(detailsDTO);
+					lowQualityBiometrics.add(detailsDTO);
 
 				} else {
 					qualityScore += fingerprintDetailsDTO.getQualityScore();
 				}
 			}
 
-			fingerprintDetailsDTO.getSegmentedFingerprints().removeAll(lowQualityBio);
-
-			double avgQualityScore = qualityScore / (double) fingerprintDetailsDTO.getSegmentedFingerprints().size();
+			fingerprintDetailsDTO.getSegmentedFingerprints().removeAll(lowQualityBiometrics);
 
 			setBioQualityScores(fingerprintDetailsDTO.getFingerType(), fingerprintDetailsDTO.getNumRetry(),
 					qualityScore / (double) fingerprintDetailsDTO.getSegmentedFingerprints().size());
 
-			fingerprintDetailsDTO.setQualityScore(avgQualityScore);
-
 			return !fingerprintDetailsDTO.getSegmentedFingerprints().isEmpty();
-		}
-
-		/** Check if all non exception biometrics captured or not */
-		return isAllNonExceptionBiometricsCaptured(fingerprintDetailsDTO.getSegmentedFingerprints(),
+		} else if (isAllNonExceptionBiometricsCaptured(fingerprintDetailsDTO.getSegmentedFingerprints(),
 				fingerprintDetailsDTO.getFingerType(),
-				getExceptionFingersByBioType(fingerprintDetailsDTO.getFingerType()));
+				getExceptionFingersByBioType(fingerprintDetailsDTO.getFingerType()))) {
+
+			isValid = true;
+			if (!(boolean) SessionContext.map().get(RegistrationConstants.ONBOARD_USER)) {
+				return validateQualityScore(fingerprintDetailsDTO);
+			}
+		}
+		return isValid;
 	}
 
 	private String getThresholdKey(String fingerType) {
@@ -1208,6 +1199,10 @@ public class BioServiceImpl extends BaseService implements BioService {
 			threshold = RegistrationConstants.THUMBS_FINGERPRINT_THRESHOLD;
 		}
 		return threshold;
+	}
+
+	private void removeBelowThresholdBiometrics(FingerprintDetailsDTO fingerprintDetailsDTO) {
+
 	}
 
 	private List<String> getExceptionFingersByBioType(String bioSubType) {
@@ -1268,6 +1263,10 @@ public class BioServiceImpl extends BaseService implements BioService {
 			}
 		}
 
+		if (exceptionBiometrics != null) {
+			exceptionBiometrics.remove(RegistrationConstants.FACE);
+			exceptionBiometrics.remove(RegistrationConstants.FACE_EXCEPTION);
+		}
 		return exceptionBiometrics;
 
 	}
@@ -1313,17 +1312,21 @@ public class BioServiceImpl extends BaseService implements BioService {
 		if (exceptionFingers != null && !exceptionFingers.isEmpty()) {
 			isValid = true;
 
-			if (selectedSlap.size() - segmentedFingerPrints.size() == exceptionFingers.size()) {
-				for (FingerprintDetailsDTO detailsDTO : segmentedFingerPrints) {
-					if (exceptionFingers.contains(detailsDTO.getFingerType())
-							|| !selectedSlap.contains(detailsDTO.getFingerType())) {
-						isValid = false;
-						break;
-					}
-				}
-			} else {
-				isValid = false;
-			}
+			//TODO Temp fix
+			
+			isValid =  selectedSlap.size() - exceptionFingers.size() <= segmentedFingerPrints.size() ;
+			
+//			if (selectedSlap.size() - exceptionFingers.size() <= segmentedFingerPrints.size() ) {
+//				for (FingerprintDetailsDTO detailsDTO : segmentedFingerPrints) {
+//					if (exceptionFingers.contains(detailsDTO.getFingerType())
+//							|| !selectedSlap.contains(detailsDTO.getFingerType())) {
+//						isValid = false;
+//						break;
+//					}
+//				}
+//			} else {
+//				isValid = false;
+//			}
 
 		} else {
 			return selectedSlap.size() == segmentedFingerPrints.size();
@@ -1367,7 +1370,8 @@ public class BioServiceImpl extends BaseService implements BioService {
 		if (!isMdmEnabled()) {
 			qualityScore = fingerprintDetailsDTO.getQualityScore();
 		} else {
-			qualityScore = getHighQualityScoreByBioType(fingerprintDetailsDTO.getFingerType());
+			qualityScore = getHighQualityScoreByBioType(fingerprintDetailsDTO.getFingerType(),
+					fingerprintDetailsDTO.getQualityScore());
 		}
 		return qualityScore >= Double.parseDouble(getGlobalConfigValueOf(handThreshold))
 				|| (qualityScore < Double.parseDouble(getGlobalConfigValueOf(handThreshold))
@@ -1398,7 +1402,7 @@ public class BioServiceImpl extends BaseService implements BioService {
 					"Validating quality score of captured fingerprints ended");
 			return false;
 		} catch (RuntimeException runtimeException) {
-			LOGGER.error(BIO_SERVICE, APPLICATION_NAME, APPLICATION_ID,
+			LOGGER.error(LOG_REG_FINGERPRINT_CAPTURE_CONTROLLER, APPLICATION_NAME, APPLICATION_ID,
 					runtimeException.getMessage() + ExceptionUtils.getStackTrace(runtimeException));
 
 			throw new RegBaseUncheckedException(RegistrationConstants.USER_REG_FINGERPRINT_SCORE_VALIDATION_EXP,
@@ -1430,7 +1434,27 @@ public class BioServiceImpl extends BaseService implements BioService {
 		for (FingerprintDetailsDTO detailsDTO : fingerprintDetailsDTOs) {
 			segmentedFingerPrints.addAll(detailsDTO.getSegmentedFingerprints());
 		}
-		if (!isAllNonExceptionBiometricsCaptured(segmentedFingerPrints, null, getAllExceptionFingers())) {
+
+		List<String> fingerBioAttributes = new LinkedList<>();
+		fingerBioAttributes.addAll(RegistrationConstants.leftHandUiAttributes);
+		fingerBioAttributes.addAll(RegistrationConstants.rightHandUiAttributes);
+		fingerBioAttributes.addAll(RegistrationConstants.twoThumbsUiAttributes);
+
+		List<String> nonConfigFiongers = getNonConfigBioAttributes(fingerBioAttributes);
+
+		nonConfigFiongers = nonConfigFiongers != null ? nonConfigFiongers : new LinkedList<>();
+
+		List<String> exceptionFingers = getAllExceptionFingers();
+
+		if (exceptionFingers != null) {
+			for (String exceptiopnFinger : exceptionFingers) {
+				if (!nonConfigFiongers.contains(exceptiopnFinger)) {
+					nonConfigFiongers.add(exceptiopnFinger);
+				}
+			}
+		}
+
+		if (!isAllNonExceptionBiometricsCaptured(segmentedFingerPrints, null, nonConfigFiongers)) {
 			return false;
 		}
 		return true;
@@ -1439,6 +1463,21 @@ public class BioServiceImpl extends BaseService implements BioService {
 	public boolean hasBiometricExceptionToggleEnabled() {
 		return (Boolean) SessionContext.userContext().getUserMap()
 				.get(RegistrationConstants.TOGGLE_BIO_METRIC_EXCEPTION);
+	}
+
+	protected List<String> getNonConfigBioAttributes(List<String> constantAttributes) {
+
+		List<String> nonConfigBiometrics = new LinkedList<>();
+
+		// Get Bio Attributes
+		List<String> uiAttributes = getBioAttributes();
+
+		for (String attribute : constantAttributes) {
+			if (!uiAttributes.contains(attribute)) {
+				nonConfigBiometrics.add(RegistrationConstants.regBioMap.get(attribute));
+			}
+		}
+		return nonConfigBiometrics;
 	}
 
 }

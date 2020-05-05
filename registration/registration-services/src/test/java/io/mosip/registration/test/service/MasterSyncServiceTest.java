@@ -47,6 +47,7 @@ import io.mosip.registration.constants.RegistrationConstants;
 import io.mosip.registration.context.ApplicationContext;
 import io.mosip.registration.context.SessionContext;
 import io.mosip.registration.context.SessionContext.UserContext;
+import io.mosip.registration.dao.IdentitySchemaDao;
 import io.mosip.registration.dao.MachineMappingDAO;
 import io.mosip.registration.dao.MasterSyncDao;
 import io.mosip.registration.dao.UserOnboardDAO;
@@ -56,6 +57,7 @@ import io.mosip.registration.dto.ResponseDTO;
 import io.mosip.registration.dto.SuccessResponseDTO;
 import io.mosip.registration.dto.mastersync.BiometricAttributeDto;
 import io.mosip.registration.dto.mastersync.MasterDataResponseDto;
+import io.mosip.registration.dto.response.SchemaDto;
 import io.mosip.registration.dto.response.SyncDataResponseDto;
 import io.mosip.registration.entity.BiometricAttribute;
 import io.mosip.registration.entity.BlacklistedWords;
@@ -130,6 +132,9 @@ public class MasterSyncServiceTest {
 	private ApplicationContext context;
 	@Mock
 	private MachineMappingDAO machineMappingDAO;
+	
+	@Mock
+	private IdentitySchemaDao identitySchemaDao; 
 
 	@Before
 	public void beforeClass() throws Exception {
@@ -144,6 +149,7 @@ public class MasterSyncServiceTest {
 		PowerMockito.when(SessionContext.userContext().getRegistrationCenterDetailDTO()).thenReturn(centerDetailDTO);
 		
 		PowerMockito.mockStatic(ApplicationContext.class);
+		
 	}
 
 	@Test
@@ -226,7 +232,7 @@ public class MasterSyncServiceTest {
 		Mockito.when(objectMapper.readValue(masterJson, MasterDataResponseDto.class)).thenReturn(masterSyncDto);
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class))).thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);
@@ -252,7 +258,7 @@ public class MasterSyncServiceTest {
 		LinkedList<ErrorResponseDTO> errorResponses = new LinkedList<>();
 
 		Mockito.when(RegistrationAppHealthCheckUtil.isNetworkAvailable()).thenReturn(false);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		errorResponse.setCode(RegistrationConstants.MASTER_SYNC_OFFLINE_FAILURE_MSG_CODE);
@@ -310,7 +316,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenThrow(IOException.class);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(null);
@@ -359,7 +365,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 		when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(null);
 
@@ -407,7 +413,7 @@ public class MasterSyncServiceTest {
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
 		when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(null);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 		Mockito.when(serviceDelegateUtil.get(Mockito.anyString(), Mockito.anyMap(), Mockito.anyBoolean(),
 				Mockito.anyString())).thenThrow(RegBaseUncheckedException.class);
@@ -455,7 +461,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(null);
@@ -494,7 +500,7 @@ public class MasterSyncServiceTest {
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
 		when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(null);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 		Mockito.when(serviceDelegateUtil.get(Mockito.anyString(), Mockito.anyMap(), Mockito.anyBoolean(),
 				Mockito.anyString())).thenThrow(new RegBaseCheckedException("", ""));
@@ -575,7 +581,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);
@@ -637,7 +643,7 @@ public class MasterSyncServiceTest {
 
 		String masterSyncJson = "";
 
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 		Mockito.when(masterSyncDao.syncJobDetails(Mockito.anyString())).thenReturn(masterSyncDetails);
 
@@ -722,7 +728,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);
@@ -943,7 +949,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);
@@ -1029,7 +1035,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.FAILURE);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);
@@ -1078,7 +1084,7 @@ public class MasterSyncServiceTest {
 		Mockito.when(
 				serviceDelegateUtil.get(Mockito.anyString(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyString()))
 				.thenReturn(mainMap);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		ResponseDTO responseDto = masterSyncServiceImpl.getMasterSync("MDS_J00001", "System");
@@ -1338,7 +1344,7 @@ public class MasterSyncServiceTest {
 
 		Mockito.when(masterSyncDao.saveSyncData(Mockito.any(SyncDataResponseDto.class)))
 				.thenReturn(RegistrationConstants.SUCCESS);
-		Mockito.when(machineMappingDAO.getKeyIndexByMacId(Mockito.anyString()))
+		Mockito.when(machineMappingDAO.getKeyIndexByMachineName(Mockito.anyString()))
 		.thenReturn("keyIndex");
 
 		sucessResponse.setCode(RegistrationConstants.MASTER_SYNC_SUCESS_MSG_CODE);

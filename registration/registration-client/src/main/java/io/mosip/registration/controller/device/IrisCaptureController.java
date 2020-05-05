@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -167,6 +168,9 @@ public class IrisCaptureController extends BaseController {
 	 */
 	@FXML
 	public void initialize() {
+
+		disablePaneOnBioAttributes(leftIrisPane, Arrays.asList(RegistrationConstants.leftEyeUiAttribute));
+		disablePaneOnBioAttributes(rightIrisPane, Arrays.asList(RegistrationConstants.rightEyeUiAttribute));
 		leftIrisCount = 0;
 		rightIrisCount = 0;
 		try {
@@ -336,7 +340,8 @@ public class IrisCaptureController extends BaseController {
 	private Image findImage(IrisDetailsDTO capturedIris) {
 		if (bioservice.isMdmEnabled()) {
 			if (bioservice.getBioStreamImage(capturedIris.getIrisType(), capturedIris.getNumOfIrisRetry()) != null)
-				return bioservice.getBioStreamImage(capturedIris.getIrisType(), capturedIris.getNumOfIrisRetry());
+				return convertBytesToImage(
+						bioservice.getBioStreamImage(capturedIris.getIrisType(), capturedIris.getNumOfIrisRetry()));
 			return convertBytesToImage(capturedIris.getIris());
 		}
 		return convertBytesToImage(capturedIris.getIris());
@@ -727,9 +732,9 @@ public class IrisCaptureController extends BaseController {
 					if (typeIris.contains(RegistrationConstants.LEFT)) {
 						// leftIrisCount++;
 						// iris.setNumOfIrisRetry(leftIrisCount);
-						leftIrisImage.setImage(
-								bioservice.isMdmEnabled() ? bioservice.getBioStreamImage(iris.getIrisType(), attempt)
-										: convertBytesToImage(iris.getIris()));
+						leftIrisImage.setImage(bioservice.isMdmEnabled()
+								? convertBytesToImage(bioservice.getBioStreamImage(iris.getIrisType(), attempt))
+								: convertBytesToImage(iris.getIris()));
 						leftIrisPane.getStyleClass().add(RegistrationConstants.IRIS_PANES_SELECTED);
 						leftIrisQualityScore.setText(getQualityScore(qualityScore));
 						leftIrisAttempts.setText(String.valueOf(iris.getNumOfIrisRetry()));
@@ -739,9 +744,9 @@ public class IrisCaptureController extends BaseController {
 						/*** Update Right Iris UI */
 						// rightIrisCount++;
 						// iris.setNumOfIrisRetry(rightIrisCount);
-						rightIrisImage.setImage(
-								bioservice.isMdmEnabled() ? bioservice.getBioStreamImage(iris.getIrisType(), attempt)
-										: convertBytesToImage(iris.getIris()));
+						rightIrisImage.setImage(bioservice.isMdmEnabled()
+								? convertBytesToImage(bioservice.getBioStreamImage(iris.getIrisType(), attempt))
+								: convertBytesToImage(iris.getIris()));
 						rightIrisPane.getStyleClass().add(RegistrationConstants.IRIS_PANES_SELECTED);
 						rightIrisQualityScore.setText(getQualityScore(qualityScore));
 						rightIrisAttempts.setText(String.valueOf(iris.getNumOfIrisRetry()));
@@ -937,13 +942,16 @@ public class IrisCaptureController extends BaseController {
 
 			boolean isValid = false;
 
-			boolean isRightEyeCaptured = !isRightEyeException(getIrisExceptions())
-					? isValidRightEyeCaptured(irisDetailsDTOs)
-					: true;
+			boolean isRightEyeCaptured = isAvailableInBioAttributes(
+					Arrays.asList(RegistrationConstants.rightEyeUiAttribute))
+							? !isRightEyeException(getIrisExceptions()) ? isValidRightEyeCaptured(irisDetailsDTOs)
+									: true
+							: true;
 
-			boolean isLeftEyeCaptured = !isLeftEyeException(getIrisExceptions())
-					? isValidLeftEyeCaptured(irisDetailsDTOs)
-					: true;
+			boolean isLeftEyeCaptured = isAvailableInBioAttributes(
+					Arrays.asList(RegistrationConstants.leftEyeUiAttribute))
+							? !isLeftEyeException(getIrisExceptions()) ? isValidLeftEyeCaptured(irisDetailsDTOs) : true
+							: true;
 
 			isValid = isRightAndLeftBioValid(isRightEyeCaptured, isLeftEyeCaptured);
 
@@ -979,7 +987,8 @@ public class IrisCaptureController extends BaseController {
 			if (retries == 0)
 				retries = 3;
 			double qualityScore = bioservice.isMdmEnabled()
-					? bioservice.getHighQualityScoreByBioType(irisDetailsDTO.getIrisType())
+					? bioservice.getHighQualityScoreByBioType(irisDetailsDTO.getIrisType(),
+							irisDetailsDTO.getQualityScore())
 					: irisDetailsDTO.getQualityScore();
 			return qualityScore >= irisThreshold
 					|| (Double.compare(qualityScore, irisThreshold) < 0 && retries == numOfRetries)
@@ -1104,10 +1113,10 @@ public class IrisCaptureController extends BaseController {
 	}
 
 	private void singleBiometricCaptureCheck() {
-
-		if (!(validateIris(getIrises()))) {
-			continueBtn.setDisable(true);
-		}
+		continueBtn.setDisable(true);
+		if (validateIris(getIrises())) {
+			continueBtn.setDisable(false);
+		}			
 
 		long irisCountIntroducer = 0;
 
