@@ -125,7 +125,6 @@ jobs:
       run: |
         cd registration
         mvn -B package -s $GITHUB_WORKSPACE/settings.xml -DskipTests --file pom.xml    
-    
 
   publish_to_nexus:
 
